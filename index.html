@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Link Test</title>
+<!-- Connection test for the phone hand: can a phone and the tablet link directly? It holds no cards and no game.
+     One device taps "This is the tablet", the other "This is a phone" and types the code the tablet shows.
+     A free public service (PeerJS) passes the first hello; after that the two talk directly. -->
+<style>
+:root{--bg:#14131a;--card:#201f29;--ink:#ece8e1;--mute:#a9a39a;--gold:#e6c15a;--ok:#2f9e57;--bad:#c8402f;--line:#3a3836}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:24px;margin:6px 0 4px;color:var(--gold)}
+p{margin:8px 0;color:var(--mute)}
+button{display:block;width:100%;min-height:64px;margin:12px 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 20px/1.2 inherit}
+button.go{background:#7d1319;border-color:#cbc6be}
+button:disabled{opacity:.4}
+input{display:block;width:100%;height:64px;margin:12px 0;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:#0f0e12;color:var(--ink);font:700 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-align:center;text-transform:uppercase}
+.code{margin:14px 0;padding:16px;border-radius:14px;background:#0f0e12;border:1px solid var(--gold);text-align:center;font:700 44px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.25em;color:var(--gold)}
+.state{margin:14px 0;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-weight:600}
+.state.ok{border-color:var(--ok);color:#8fe0ad}
+.state.bad{border-color:var(--bad);color:#f0a79c}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:12px 0;font-size:15px}
+dt{color:var(--mute)}dd{margin:0;overflow-wrap:anywhere}
+#log{margin:12px 0 0;padding:10px;border-radius:10px;background:#0f0e12;border:1px solid var(--line);font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--mute);white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Link Test</h1>
+  <p>Checks whether a phone and the tablet can link directly over Wi-Fi. No cards and no game are on this page.</p>
+
+  <section id="pick">
+    <button class="go" id="bHost">This is the tablet</button>
+    <button id="bJoin">This is a phone</button>
+  </section>
+
+  <section id="host" hidden>
+    <p>Type this code on the phone:</p>
+    <div class="code" id="code">······</div>
+  </section>
+
+  <section id="join" hidden>
+    <p>Type the code the tablet shows:</p>
+    <input id="inCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" aria-label="Code from the tablet">
+    <button class="go" id="bGo">Link</button>
+  </section>
+
+  <div class="state" id="state" hidden></div>
+
+  <section id="live" hidden>
+    <button id="bTap">Send a tap</button>
+    <dl>
+      <dt>Taps sent</dt><dd id="nOut">0</dd>
+      <dt>Taps received</dt><dd id="nIn">0</dd>
+      <dt>Round trip</dt><dd id="ms">measuring</dd>
+      <dt>Route</dt><dd id="route">checking</dd>
+    </dl>
+  </section>
+
+  <dl>
+    <dt>This device</dt><dd id="ua"></dd>
+    <dt>Opened from</dt><dd id="from"></dd>
+    <dt>Direct links</dt><dd id="rtc"></dd>
+  </dl>
+  <div id="log" aria-live="polite"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)},t0=Date.now();
+  function log(m){var el=$('log');el.textContent+=((Date.now()-t0)/1000).toFixed(1)+'s  '+m+'\n';el.scrollTop=el.scrollHeight}
+  function state(m,k){var el=$('state');el.hidden=false;el.className='state'+(k?' '+k:'');el.textContent=m}
+  var hasRTC=typeof RTCPeerConnection!=='undefined',hasPeer=typeof Peer!=='undefined';
+  $('ua').textContent=navigator.userAgent;
+  $('from').textContent=location.protocol==='file:'?'a file on this device':location.origin;
+  $('rtc').textContent=hasRTC?'supported by this browser':'NOT supported by this browser';
+  if(!hasRTC)state('This browser cannot make direct links, so the phone hand cannot work in it.','bad');
+  else if(!hasPeer)state('The link library did not load. Is this device on the internet?','bad');
+  if(!hasRTC||!hasPeer){$('bHost').disabled=$('bJoin').disabled=true;return}
+
+  var PRE='swlink-',peer=null,conn=null,nOut=0,nIn=0,pingT=0;
+  // letters and digits that are hard to mix up when read off a screen
+  function mkCode(){var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='',r=new Uint32Array(6);(window.crypto||window.msCrypto).getRandomValues(r);for(var i=0;i<6;i++)s+=A[r[i]%A.length];return s}
+  function fail(where,e){var m=(e&&(e.type||e.name)||'error')+': '+(e&&e.message||e);log(where+' '+m);state('Could not link ('+where+'). '+m,'bad')}
+
+  function wire(c){conn=c;
+    c.on('open',function(){log('link open');state('Linked. Tap the button on each device.','ok');$('live').hidden=false;$('host').hidden=true;$('join').hidden=true;
+      clearInterval(pingT);pingT=setInterval(function(){try{c.send({k:'ping',t:Date.now()})}catch(e){}},2000);setTimeout(route,1500);setTimeout(route,6000)});
+    c.on('data',function(d){if(!d)return;
+      if(d.k==='ping')c.send({k:'pong',t:d.t});
+      else if(d.k==='pong')$('ms').textContent=(Date.now()-d.t)+' ms';
+      else if(d.k==='tap'){nIn++;$('nIn').textContent=nIn}});
+    c.on('close',function(){log('link closed');clearInterval(pingT);state('The link closed. Reload both pages to try again.','bad')});
+    c.on('error',function(e){fail('link',e)})}
+
+  // which way the data really goes: straight across the Wi-Fi, or out through the internet
+  function route(){var pc=conn&&conn.peerConnection;if(!pc||!pc.getStats)return;
+    pc.getStats().then(function(st){var pair=null,by={};st.forEach(function(r){by[r.id]=r;if(r.type==='transport'&&r.selectedCandidatePairId)pair=r.selectedCandidatePairId});
+      var p=pair&&by[pair];if(!p)st.forEach(function(r){if(r.type==='candidate-pair'&&(r.selected||(r.nominated&&r.state==='succeeded')))p=r});
+      if(!p)return;var a=by[p.localCandidateId]||{},b=by[p.remoteCandidateId]||{},ty=(a.candidateType||'?')+' / '+(b.candidateType||'?');
+      $('route').textContent=(a.candidateType==='host'&&b.candidateType==='host'?'direct, across the Wi-Fi':a.candidateType==='relay'||b.candidateType==='relay'?'relayed through the internet':'direct, by way of the router')+' ('+ty+')';
+      log('route '+ty)}).catch(function(e){log('route: '+e)})}
+
+  $('bHost').onclick=function(){$('pick').hidden=true;$('host').hidden=false;var code=mkCode();state('Starting…');log('host: asking the hello service for '+code);
+    peer=new Peer(PRE+code);
+    peer.on('open',function(){$('code').textContent=code;state('Waiting for the phone…');log('host: ready')});
+    peer.on('connection',function(c){log('host: a device is joining');if(conn&&conn.open){c.close();return}wire(c)});
+    peer.on('disconnected',function(){log('host: hello service dropped (an open link carries on)')});
+    peer.on('error',function(e){fail('hello service',e)})};
+
+  $('bJoin').onclick=function(){$('pick').hidden=true;$('join').hidden=false;$('inCode').focus()};
+  $('bGo').onclick=function(){var code=$('inCode').value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();if(code.length!==6)return state('The code has 6 letters or digits.','bad');
+    $('bGo').disabled=true;state('Linking…');log('phone: asking the hello service');
+    peer=new Peer();
+    peer.on('open',function(){log('phone: calling '+code);wire(peer.connect(PRE+code,{reliable:true}));
+      setTimeout(function(){if(!conn||!conn.open){state('No answer after 15 seconds. Check the code, and that the tablet still shows it.','bad');$('bGo').disabled=false}},15000)});
+    peer.on('error',function(e){fail('hello service',e);$('bGo').disabled=false})};
+  $('inCode').addEventListener('keydown',function(e){if(e.key==='Enter')$('bGo').click()});
+
+  $('bTap').onclick=function(){if(!conn||!conn.open)return;conn.send({k:'tap'});nOut++;$('nOut').textContent=nOut};
+  window.addEventListener('error',function(e){log('page error: '+e.message)});
+  log('ready');
+})();
+</script>
+</body>
+</html>
