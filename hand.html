@@ -79,7 +79,7 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
 <script>
 (function(){
   var PRE='swhand-',KEY='swhand-v1',app=document.getElementById('app');
-  var V={view:'start',code:'',seat:null,tok:'',seats:null,st:null,msg:'',lost:false,openC:'',pile:''},peer=null,conn=null,retryT=0,tries=0,toastT=0,wake=null;
+  var V={view:'start',code:'',seat:null,tok:'',seats:null,st:null,msg:'',lost:false,openC:'',pile:'',lib:null},peer=null,conn=null,retryT=0,tries=0,toastT=0,wake=null;
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function keep(){try{localStorage.setItem(KEY,JSON.stringify({code:V.code,seat:V.seat,tok:V.tok}))}catch(e){}}
   function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},3800)}
@@ -117,6 +117,7 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
     else if(m.k==='ok'){V.seat=m.seat;V.tok=m.tok||'';keep();V.view='hand';awake();PART={};ASKED={}} // a new link: pictures that were on their way are asked for again
     else if(m.k==='state'){V.st=m;V.view='hand';want(m.hand);if(V.pile)want(V.pile==='foe'?m.fx:m.dx)}
     else if(m.k==='art'){if(!gotArt(m))return}
+    else if(m.k==='lib'){if(V.lib){V.lib=m;want(m.cards)}} // every card of a faction, asked for from the buttons under the hand
     else if(m.k==='no'){toast(m.why||'The tablet said no.');if(m.seat){V.seat=null;V.tok='';keep();hello()}}
     else if(m.k==='bye'){V.seat=null;V.tok='';V.st=null;keep();drop();V.lost=false;V.view='start';V.msg='The tablet let this phone go.'}
     draw()}
@@ -162,6 +163,8 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
         if(hint)h+='<p class="hint'+(pk?' gold':'')+'">'+esc(hint)+'</p>'}
         h+='</div>'}
       return h+'</div>'}
+    if(V.lib)return head+'<button class="btn" id="unpile">‹ Back to your hand</button><p>'+(V.lib.fac?'Every '+esc(V.lib.fac)+' card.':'')+'</p><div class="hand">'
+        +((V.lib.cards||[]).map(function(c,i){return one(c,i,'lib:')}).join('')||'<div class="note">Asking the tablet…</div>')+'</div>';
     if(V.pile){var L=(V.pile==='foe'?st.fx:st.dx)||[]; // a discard pile: both are open to both players
       return head+'<button class="btn" id="unpile">‹ Back to your hand</button><p>'+(V.pile==='foe'?esc(st.foe.name)+'’s discard pile':'Your discard pile')+', the newest card first.</p><div class="hand">'
         +(L.map(function(c,i){return one(c,i,V.pile+':')}).join('')||'<div class="note">Nothing has been discarded yet.</div>')+'</div>'}
@@ -169,15 +172,17 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
     return head+'<div class="hand">'+(cards||'<div class="note">No cards in your hand.</div>')+'</div>'
       +'<div class="foot"><b>'+st.draw+'</b> in your draw pile<br>'+esc(st.foe.name)+' holds <b>'+st.foe.hand+'</b> '+(st.foe.hand===1?'card':'cards')+' and <b>'+st.foe.magic+'</b> magic</div>'
       +'<div class="acts"><button class="btn" data-pile="mine">Your discards<small>'+st.disc+(st.disc===1?' card':' cards')+'</small></button><button class="btn" data-pile="foe">'+esc(st.foe.name)+'’s discards<small>'+((st.fx||[]).length)+((st.fx||[]).length===1?' card':' cards')+'</small></button></div>'
+      +'<div class="acts"><button class="btn" data-lib="0">Your cards<small>every '+esc(st.fac||'')+' card</small></button><button class="btn" data-lib="1">Their cards<small>every '+esc(st.foe.fac||'')+' card</small></button></div>'
       +'<button class="leave" id="leave">Unlink this phone</button>'}
 
   app.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;awake();
     if(b.id==='go'){var c=clean(document.getElementById('code').value);if(c.length!==6){V.msg='The code has 6 letters or digits.';return draw()}
       if(c!==V.code){V.seat=null;V.tok=''}V.code=c;keep();V.lost=false;tries=0;return link()}
-    if(b.id==='leave'){drop();V.pile='';V.seat=null;V.tok='';V.st=null;V.lost=false;V.view='start';V.msg='';keep();return draw()}
+    if(b.id==='leave'){drop();V.pile='';V.lib=null;V.seat=null;V.tok='';V.st=null;V.lost=false;V.view='start';V.msg='';keep();return draw()}
     if(b.dataset.seat!=null){V.seat=+b.dataset.seat;hello();return}
     if(b.dataset.key!=null){V.openC=V.openC===b.dataset.key?'':b.dataset.key;return draw()}
-    if(b.id==='unpile'){V.pile='';return draw()}
+    if(b.id==='unpile'){V.pile='';V.lib=null;return draw()}
+    if(b.dataset.lib!=null){V.lib={foe:+b.dataset.lib,cards:[]};send({k:'lib',foe:+b.dataset.lib});window.scrollTo(0,0);return draw()}
     if(b.dataset.pile){V.pile=b.dataset.pile;want(V.pile==='foe'?V.st.fx:V.st.dx);window.scrollTo(0,0);return draw()}
     if(b.dataset.zoom){var z=document.getElementById('zoom');z.firstChild.src=ART[b.dataset.zoom]||'';z.hidden=false;return}
     if(b.dataset.act)act(b.dataset.act,+b.dataset.i)});
