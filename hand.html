@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Hand</title>
+<!-- A player's hand on their own phone. This page holds no cards and no game: it links straight to the tablet that hosts
+     the battle (type the tablet's code, or scan its picture) and shows whatever hand the tablet sends it.
+     A free public service (PeerJS) passes the first hello; after that the phone and the tablet talk directly. -->
+<style>
+:root{--bg:#121117;--card:#1e1d26;--card2:#272631;--ink:#ece8e1;--mute:#a9a39a;--gold:#e6c15a;--ok:#3fae68;--bad:#d2553f;--line:#3a3944;--pc:#8a6cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:0 14px calc(28px + env(safe-area-inset-bottom))}
+h1{font:700 26px/1.15 Georgia,"Times New Roman",serif;margin:26px 0 6px;color:var(--gold)}
+p{margin:8px 0;color:var(--mute)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;text-align:inherit}
+.btn{display:block;width:100%;min-height:58px;margin:10px 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-weight:650;font-size:19px;text-align:center}
+.btn.go{background:linear-gradient(180deg,#b3262b,#7d1319);border-color:#d9d3ca}
+.btn:disabled{opacity:.4}
+.btn small{display:block;font-weight:400;font-size:14px;color:var(--mute)}
+input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:#0c0b10;color:var(--ink);font:700 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.28em;text-align:center;text-transform:uppercase}
+.note{margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.note.bad{border-color:var(--bad);color:#f3b3a6}
+.note.ok{border-color:var(--ok);color:#a5e6bd}
+
+.top{position:sticky;top:0;z-index:2;margin:0 -14px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,var(--bg) 78%,transparent);}
+.who{display:flex;align-items:baseline;gap:10px;border-left:5px solid var(--pc);padding-left:10px}
+.who b{font:700 22px/1.15 Georgia,"Times New Roman",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{color:var(--mute);font-size:14px;white-space:nowrap}
+.bar{display:flex;gap:8px;margin-top:10px}
+.chip{flex:1;min-width:0;padding:8px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.chip small{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.chip b{display:block;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.me{border-color:var(--gold)}.chip.me b{color:var(--gold)}
+.lost{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#3a1a15;border:1px solid var(--bad);color:#f3b3a6;font-size:15px}
+
+.hand{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.cd{display:block;width:100%;border-radius:14px;background:var(--card);border:1px solid var(--line);overflow:hidden}
+.cd.on{border-color:var(--pc);background:var(--card2)}
+.cd.pk{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.hd{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:10px 14px}
+.cost{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0c0b10;border:2px solid var(--pc);font:700 20px/1 Georgia,serif}
+.cost.ev{border-radius:10px;border-color:var(--gold)}
+.nm{flex:1;min-width:0}
+.nm b{display:block;font:700 19px/1.2 Georgia,"Times New Roman",serif;overflow-wrap:anywhere}
+.nm small{display:block;color:var(--mute);font-size:14px}
+.st{flex:none;text-align:right;font-size:14px;color:var(--mute);white-space:nowrap}
+.st b{display:block;color:var(--ink);font-size:16px}
+.bd{padding:2px 14px 14px}
+.ab{margin:8px 0;font-size:16px;color:#d9d4cb}
+.ab b{color:var(--gold)}
+.acts{display:flex;gap:8px;margin-top:12px}
+.acts .btn{margin:0;min-height:54px;font-size:17px}
+.hint{margin:10px 0 0;font-size:14.5px;color:var(--mute)}
+.hint.gold{color:var(--gold)}
+.foot{margin:16px 0 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line);color:var(--mute);font-size:15px}
+.foot b{color:var(--ink)}
+.leave{margin-top:18px;font-size:15px;color:var(--mute);text-decoration:underline;min-height:44px;width:100%;text-align:center}
+#toast{position:fixed;left:14px;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;padding:14px 16px;border-radius:14px;background:#2b1512;border:1px solid var(--bad);color:#ffd9d1;box-shadow:0 8px 30px rgba(0,0,0,.6);transform:translateY(160%);transition:transform .25s}
+#toast.on{transform:none}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script>
+(function(){
+  var PRE='swhand-',KEY='swhand-v1',app=document.getElementById('app');
+  var V={view:'start',code:'',seat:null,tok:'',seats:null,st:null,msg:'',lost:false,openC:''},peer=null,conn=null,retryT=0,tries=0,toastT=0,wake=null;
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function keep(){try{localStorage.setItem(KEY,JSON.stringify({code:V.code,seat:V.seat,tok:V.tok}))}catch(e){}}
+  function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},3800)}
+  function clean(c){return String(c||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,6)}
+  // the screen stays on while the hand is showing, where the phone allows it
+  function awake(){try{if(navigator.wakeLock&&!wake)navigator.wakeLock.request('screen').then(function(w){wake=w;w.addEventListener('release',function(){wake=null})}).catch(function(){})}catch(e){}}
+
+  // ---- the link ----
+  function send(m){try{if(conn&&conn.open)conn.send(m)}catch(e){}}
+  function hello(){var m={k:'hello'};if(V.seat===0||V.seat===1){m.seat=V.seat;if(V.tok)m.tok=V.tok}send(m)}
+  function drop(){clearTimeout(retryT);try{if(conn)conn.close()}catch(e){}try{if(peer)peer.destroy()}catch(e){}conn=null;peer=null}
+  function link(){drop();V.msg='';if(!V.lost&&V.view==='start')V.view='linking';draw();
+    if(typeof Peer==='undefined'){V.view='start';V.msg='The link could not be loaded. Is this phone on the internet?';return draw()}
+    var p=peer=new Peer();
+    p.on('open',function(){if(peer!==p)return;var c=conn=p.connect(PRE+V.code,{reliable:true,serialization:'json'});
+      c.on('open',function(){if(conn!==c)return;tries=0;V.lost=false;hello();draw()});
+      c.on('data',function(m){if(conn===c)onMsg(m)});
+      c.on('close',function(){if(conn===c)gone()});
+      c.on('error',function(){if(conn===c)gone()})});
+    p.on('error',function(e){if(peer!==p)return;var t=e&&e.type||'';
+      if(t==='peer-unavailable'&&!V.lost&&V.view!=='hand'){drop();V.view='start';V.msg='No tablet is showing that code. Check it, and that Phones is turned on in the tablet’s pause menu.';return draw()}
+      gone()})}
+  // the link dropped: the hand stays on the screen while the phone tries again
+  function gone(){if(V.view==='start')return;drop();V.lost=true;draw();if(tries++<60)retryT=setTimeout(link,tries<5?1500:4000)}
+  function onMsg(m){if(!m||typeof m!=='object')return;
+    if(m.k==='seats'){V.seats=m;V.view='seats'}
+    else if(m.k==='wait')V.view='wait';
+    else if(m.k==='ok'){V.seat=m.seat;V.tok=m.tok||'';keep();V.view='hand';awake()}
+    else if(m.k==='state'){V.st=m;V.view='hand'}
+    else if(m.k==='no'){toast(m.why||'The tablet said no.');if(m.seat){V.seat=null;V.tok='';keep();hello()}}
+    else if(m.k==='bye'){V.seat=null;V.tok='';V.st=null;keep();drop();V.lost=false;V.view='start';V.msg='The tablet let this phone go.'}
+    draw()}
+  function act(a,i){var st=V.st;if(!st||!st.hand[i])return;if(V.lost)return toast('The link is down. Trying again…');send({k:'act',a:a,i:i,c:st.hand[i].c})}
+
+  // ---- the screens ----
+  function draw(){var h='';
+    if(V.view==='start'||V.view==='linking'){
+      h='<h1>Your hand</h1><p>Hold your cards on this phone. Type the code the tablet shows under Phones in its pause menu.</p>'
+       +(V.msg?'<div class="note bad">'+esc(V.msg)+'</div>':'')
+       +'<input id="code" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from the tablet" value="'+esc(V.code)+'"'+(V.view==='linking'?' disabled':'')+'>'
+       +'<button class="btn go" id="go"'+(V.view==='linking'?' disabled':'')+'>'+(V.view==='linking'?'Linking…':'Link to the tablet')+'</button>'
+       +'<p>This page holds no cards. The tablet sends your hand straight to this phone.</p>'}
+    else if(V.view==='seats'){var s=V.seats;
+      h='<h1>Whose hand is this?</h1><p>Choose your own name. The tablet will ask to allow it.</p>'
+       +[0,1].map(function(o){return'<button class="btn" data-seat="'+o+'"'+(s.taken[o]?' disabled':'')+'>'+esc(s.names[o])+(s.taken[o]?'<small>already held</small>':'')+'</button>'}).join('')
+       +'<button class="leave" id="leave">Use a different code</button>'}
+    else if(V.view==='wait'){
+      h='<h1>Almost there</h1><div class="note ok">Tap <b>Allow</b> on the tablet to let this phone hold the hand.</div><button class="leave" id="leave">Cancel</button>'}
+    else h=hand();
+    app.innerHTML=h;
+    var st=V.st;document.documentElement.style.setProperty('--pc',st&&/^#[0-9a-fA-F]{3,8}$/.test(st.col||'')?st.col:'#8a6cff')}
+
+  function hand(){var st=V.st,lost=V.lost?'<div class="lost">The link dropped. Trying again…</div>':'';
+    if(!st)return'<div class="top"><div class="who"><b>Linked</b></div>'+lost+'</div><p>Waiting for the tablet…</p>';
+    var head='<div class="top"><div class="who"><b>'+esc(st.name)+'</b><span>'+esc(st.fac||'')+'</span></div>';
+    if(st.idle)return head+lost+'</div><div class="note">Linked. Your hand appears here when a battle with the cards in the game begins.</div><button class="leave" id="leave">Unlink this phone</button>';
+    head+='<div class="bar"><div class="chip"><small>Magic</small><b>'+st.magic+' of '+st.max+'</b></div><div class="chip'+(st.mine?' me':'')+'"><small>'+(st.setup?'Before the battle':st.mine?'Turn '+st.turn+' · your turn':esc(st.who)+'’s turn')+'</small><b>'+(st.over?'Battle over':st.setup?'Setting up':esc(st.phn)+' phase')+'</b></div></div>'+lost+'</div>';
+    var cards=st.hand.map(function(c,i){var open=V.openC===c.c+'#'+i,pk=st.pick===c.c,ev=c.k==='event',unit=c.k!=='event'&&c.k!=='gate',h;
+      h='<div class="cd'+(open?' on':'')+(pk?' pk':'')+'"><button class="hd" data-open="'+i+'" aria-expanded="'+open+'"><span class="cost'+(ev?' ev':'')+'">'+c.cost+'</span><span class="nm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+'</small></span>'
+        +(unit?'<span class="st"><b>'+c.atk+' '+(c.rng?'ranged':'melee')+'</b>'+c.life+' life</span>':'')+'</button>';
+      if(open){h+='<div class="bd">';
+        (c.tx||[]).forEach(function(t,k){if(t)h+='<p class="ab">'+(c.ab&&c.ab[k]?'<b>'+esc(c.ab[k])+'.</b> ':'')+esc(t)+'</p>'});
+        var verb=unit?'Summon':c.k==='gate'?'Build':c.st?'Place':'Play',a=unit||c.k==='gate'||c.st?'pick':'play',off=!st.mine||st.over;
+        h+='<div class="acts"><button class="btn go" data-act="'+a+'" data-i="'+i+'"'+(off?' disabled':'')+'>'+(pk?'Cancel':verb)+'</button><button class="btn" data-act="discard" data-i="'+i+'"'+(off?' disabled':'')+'>Discard'+(st.mine&&st.phase===4?'<small>+1 magic</small>':'')+'</button></div>';
+        var hint=pk?'Chosen. Now tap a lit space on the tablet to place it.':!st.mine?'You can read your cards now, and use them on your turn.'
+          :c.cost>st.magic?'It costs '+c.cost+' and you have '+st.magic+' magic.'
+          :unit&&st.phase!==0?'Units are summoned in the Summon phase.':c.k==='gate'&&st.phase!==2?'Gates are built in the Build phase.'
+          :ev&&!c.st&&c.ph&&c.ph!=='Any'&&c.ph!==st.phn?'This is a '+c.ph+'-phase event.':st.phase!==4?'Discarding gives magic only in your Magic phase.':'';
+        if(hint)h+='<p class="hint'+(pk?' gold':'')+'">'+esc(hint)+'</p>';
+        h+='</div>'}
+      return h+'</div>'}).join('');
+    return head+'<div class="hand">'+(cards||'<div class="note">No cards in your hand.</div>')+'</div>'
+      +'<div class="foot"><b>'+st.draw+'</b> in your draw pile · <b>'+st.disc+'</b> discarded<br>'+esc(st.foe.name)+' holds <b>'+st.foe.hand+'</b> '+(st.foe.hand===1?'card':'cards')+' and <b>'+st.foe.magic+'</b> magic</div>'
+      +'<button class="leave" id="leave">Unlink this phone</button>'}
+
+  app.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;awake();
+    if(b.id==='go'){var c=clean(document.getElementById('code').value);if(c.length!==6){V.msg='The code has 6 letters or digits.';return draw()}
+      if(c!==V.code){V.seat=null;V.tok=''}V.code=c;keep();V.lost=false;tries=0;return link()}
+    if(b.id==='leave'){drop();V.seat=null;V.tok='';V.st=null;V.lost=false;V.view='start';V.msg='';keep();return draw()}
+    if(b.dataset.seat!=null){V.seat=+b.dataset.seat;hello();return}
+    if(b.dataset.open!=null){var i=+b.dataset.open,k=V.st.hand[i].c+'#'+i;V.openC=V.openC===k?'':k;return draw()}
+    if(b.dataset.act)act(b.dataset.act,+b.dataset.i)});
+  app.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='code'){var g=document.getElementById('go');if(g)g.click()}});
+  // back on the screen after the phone slept: the link is taken up again
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;if(V.view==='hand'){awake();if(!conn||!conn.open){tries=0;gone()}}});
+  window.addEventListener('hashchange',function(){var c=clean(location.hash);if(c.length===6&&c!==V.code){V.code=c;V.seat=null;V.tok='';keep();V.lost=false;V.view='start';link()}});
+
+  // ---- start: a code in the address (from the tablet's picture), else the one this phone used last ----
+  var saved={};try{saved=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+  var fromHash=clean(location.hash);
+  if(fromHash.length===6){V.code=fromHash;if(saved.code===fromHash&&(saved.seat===0||saved.seat===1)){V.seat=saved.seat;V.tok=saved.tok||''}keep();link()}
+  else if(saved.code&&clean(saved.code).length===6){V.code=clean(saved.code);if((saved.seat===0||saved.seat===1)&&saved.tok){V.seat=saved.seat;V.tok=saved.tok;link()}else draw()}
+  else draw();
+})();
+</script>
+</body>
+</html>
