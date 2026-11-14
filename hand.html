@@ -3,71 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#121117">
+<meta name="theme-color" content="#0d0b12">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Hand</title>
 <!-- A player's hand on their own phone. This page holds no cards and no game: it links straight to the tablet that hosts
      the battle (type the tablet's code, or scan its picture) and shows whatever hand the tablet sends it.
      A free public service (PeerJS) passes the first hello; after that the phone and the tablet talk directly. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#121117;--card:#1e1d26;--card2:#272631;--ink:#ece8e1;--mute:#a9a39a;--gold:#e6c15a;--ok:#3fae68;--bad:#d2553f;--line:#3a3944;--pc:#8a6cff}
+:root{--bg:#0d0b12;--panel:#17141f;--panel2:#211c2c;--ink:#efe9df;--mute:#a59e93;--gold:#e6c15a;--gold2:#a8802a;--ok:#46b873;--bad:#d2553f;--line:#342f40;--pc:#8a6cff;--serif:"Cinzel",Georgia,"Times New Roman",serif;--nav:66px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:560px;margin:0 auto;padding:0 14px calc(28px + env(safe-area-inset-bottom))}
-h1{font:700 26px/1.15 Georgia,"Times New Roman",serif;margin:26px 0 6px;color:var(--gold)}
-p{margin:8px 0;color:var(--mute)}
+body{background:radial-gradient(130% 46% at 50% 0%,#241c36 0%,var(--bg) 62%) fixed}
+main{max-width:560px;margin:0 auto;padding:0 14px}
+main.linked{padding-bottom:calc(var(--nav) + 24px + env(safe-area-inset-bottom))}
+main.sheet{padding-bottom:calc(var(--nav) + 230px + env(safe-area-inset-bottom))}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;text-align:inherit}
-.btn{display:block;width:100%;min-height:58px;margin:10px 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-weight:650;font-size:19px;text-align:center}
-.btn.go{background:linear-gradient(180deg,#b3262b,#7d1319);border-color:#d9d3ca}
-.btn:disabled{opacity:.4}
-.btn small{display:block;font-weight:400;font-size:14px;color:var(--mute)}
-input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:#0c0b10;color:var(--ink);font:700 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.28em;text-align:center;text-transform:uppercase}
-.note{margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+p{margin:8px 0;color:var(--mute)}
+h1{font:800 30px/1.1 var(--serif);letter-spacing:.04em;margin:0 0 6px;color:var(--gold)}
+h2{font:600 13px/1 var(--serif);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:26px 0 10px}
+.btn{display:block;width:100%;min-height:56px;margin:10px 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#221d2e,#17141f);font-weight:650;font-size:18px;text-align:center;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 6px 16px rgba(0,0,0,.35)}
+.btn.go{background:linear-gradient(180deg,#c2302f,#7d1319);border-color:#e3dccf;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.btn:disabled{opacity:.38}
+.btn:active{filter:brightness(1.25)}
+.btn small{display:block;font-weight:400;font-size:13.5px;color:var(--mute)}
+.btn.go small{color:#f1d9d2}
+input{display:block;width:100%;height:56px;margin:10px 0;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:#09080d;color:var(--ink);font:600 19px/1 inherit}
+input:focus{outline:2px solid var(--gold);outline-offset:1px}
+input.code{height:66px;font:700 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.28em;text-align:center;text-transform:uppercase}
+.note{margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink)}
 .note.bad{border-color:var(--bad);color:#f3b3a6}
 .note.ok{border-color:var(--ok);color:#a5e6bd}
+.leave{display:block;margin:14px auto 0;min-height:44px;padding:0 12px;font-size:15px;color:var(--mute);text-decoration:underline}
 
-.top{position:sticky;top:0;z-index:2;margin:0 -14px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,var(--bg) 78%,transparent);}
-.who{display:flex;align-items:baseline;gap:10px;border-left:5px solid var(--pc);padding-left:10px}
-.who b{font:700 22px/1.15 Georgia,"Times New Roman",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.who span{color:var(--mute);font-size:14px;white-space:nowrap}
-.bar{display:flex;gap:8px;margin-top:10px}
-.chip{flex:1;min-width:0;padding:8px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
-.chip small{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
-.chip b{display:block;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chip.me{border-color:var(--gold)}.chip.me b{color:var(--gold)}
-.lost{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#3a1a15;border:1px solid var(--bad);color:#f3b3a6;font-size:15px}
+/* before a phone is linked: one quiet card in the middle of the screen */
+.gate{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:28px 6px}
+.gate .mark{font:600 12px/1 var(--serif);letter-spacing:.34em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+.gate .rule{height:1px;margin:14px 0 18px;background:linear-gradient(90deg,var(--gold),transparent)}
 
-.hand{display:flex;flex-direction:column;gap:10px;margin-top:6px}
-.cd{display:block;width:100%;border-radius:14px;background:var(--card);border:1px solid var(--line);overflow:hidden}
-.cd.on{border-color:var(--pc);background:var(--card2)}
-.cd.pk{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
-.hd{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:10px 14px}
-.cost{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0c0b10;border:2px solid var(--pc);font:700 20px/1 Georgia,serif}
+/* the top of a linked phone: who you are, your magic, where the turn is */
+.top{position:sticky;top:0;z-index:5;margin:0 -14px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,#1a1524 0%,#110e19 100%);border-bottom:1px solid #3d3320;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+.top::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,var(--pc),transparent 62%);opacity:.2;pointer-events:none}
+.top>*{position:relative}
+.id{display:flex;align-items:center;gap:12px}
+.em{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:800 21px/1 var(--serif);color:#fff;background:radial-gradient(circle at 35% 30%,var(--pc),#120e1a 78%);box-shadow:0 0 0 2px var(--gold),0 0 0 4px #17131f,0 4px 10px rgba(0,0,0,.6)}
+.who{flex:1;min-width:0}
+.who b{display:block;font:800 21px/1.15 var(--serif);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who small{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.off{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:blink 1s steps(2) infinite}
+.mg{display:flex;align-items:center;gap:10px;margin-top:12px}
+.mg span{font:600 11px/1 var(--serif);letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.mg b{font:800 22px/1 var(--serif);color:var(--gold);min-width:1.3em;text-align:right}
+.pips{flex:1;display:flex;justify-content:space-between;align-items:center;padding:0 2px}
+.pips i{width:9px;height:9px;transform:rotate(45deg);border:1px solid #5b4d2c;background:#15121c}
+.pips i.on{background:linear-gradient(135deg,#ffe9a6,var(--gold) 55%,var(--gold2));border-color:#fff2c4;box-shadow:0 0 6px rgba(230,193,90,.75)}
+.turn{margin-top:10px;font:600 13px/1 var(--serif);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.turn.me{color:var(--gold)}
+.ps{display:flex;gap:4px;margin-top:8px}
+.ps i{flex:1;min-width:0;padding:7px 0;border-radius:8px;border:1px solid var(--line);background:#120f19;font:600 9.5px/1 var(--serif);font-style:normal;letter-spacing:0;text-align:center;text-transform:uppercase;color:#746d63;overflow:hidden}
+.ps i.done{color:#9c8a5c;border-color:#4a3f25}
+.ps i.cur{background:linear-gradient(180deg,#f3d886,var(--gold));color:#1b1408;border-color:#fff2c4;box-shadow:0 0 12px rgba(230,193,90,.5)}
+.lost{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:#3a1a15;border:1px solid var(--bad);color:#f3b3a6;font-size:15px}
+
+/* cards */
+.seg{display:flex;padding:4px;margin:14px 0 4px;border-radius:13px;background:#09080d;border:1px solid var(--line)}
+.seg button{flex:1;min-height:42px;border-radius:10px;font:600 13px/1 var(--serif);letter-spacing:.08em;text-transform:uppercase;text-align:center;color:var(--mute)}
+.seg button.on{background:linear-gradient(180deg,#f3d886,var(--gold));color:#1b1408}
+.grid{display:grid;gap:12px;margin-top:14px;animation:rise .28s ease both}
+.grid.S{grid-template-columns:1fr 1fr;gap:8px}
+.cd{position:relative;display:block;width:100%;border-radius:13px;background:var(--panel);border:1px solid var(--line);overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,.45);transition:transform .16s ease,box-shadow .16s ease}
+.cd img{display:block;width:100%;height:auto;aspect-ratio:920/650;background:#09080d}
+.cd.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 22px rgba(230,193,90,.45),0 10px 22px rgba(0,0,0,.5);transform:translateY(-2px)}
+.cd.pk::after{content:'Chosen';position:absolute;left:8px;top:8px;padding:5px 9px;border-radius:8px;background:var(--gold);color:#1b1408;font:800 11px/1 var(--serif);letter-spacing:.1em;text-transform:uppercase}
+.tx{display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 12px}
+.cost{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#09080d;border:2px solid var(--pc);font:800 19px/1 var(--serif)}
 .cost.ev{border-radius:10px;border-color:var(--gold)}
-.nm{flex:1;min-width:0}
-.nm b{display:block;font:700 19px/1.2 Georgia,"Times New Roman",serif;overflow-wrap:anywhere}
-.nm small{display:block;color:var(--mute);font-size:14px}
-.st{flex:none;text-align:right;font-size:14px;color:var(--mute);white-space:nowrap}
-.st b{display:block;color:var(--ink);font-size:16px}
-.hd.pic{display:block;min-height:0;padding:0}
-.hd.pic img{display:block;width:100%;height:auto;aspect-ratio:920/650;background:#0c0b10}
-.bd{padding:2px 14px 14px}
-.ab{margin:8px 0;font-size:16px;color:#d9d4cb}
-.ab b{color:var(--gold)}
-.acts{display:flex;gap:8px;margin-top:12px}
-.acts .btn{margin:0;min-height:54px;font-size:17px}
-.hint{margin:10px 0 0;font-size:14.5px;color:var(--mute)}
-.hint.gold{color:var(--gold)}
-.foot{margin:16px 0 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line);color:var(--mute);font-size:15px}
+.tn{flex:1;min-width:0}
+.tn b{display:block;font:800 17px/1.2 var(--serif);overflow-wrap:anywhere}
+.tn small{display:block;color:var(--mute);font-size:13.5px}
+.grid.S .tx{flex-direction:column;align-items:flex-start;gap:6px}
+.empty{margin:18px 0;padding:22px 16px;border-radius:14px;border:1px dashed var(--line);text-align:center;color:var(--mute)}
+.foot{margin:18px 0 0;font-size:14.5px;color:var(--mute);text-align:center}
 .foot b{color:var(--ink)}
-.leave{margin-top:18px;font-size:15px;color:var(--mute);text-decoration:underline;min-height:44px;width:100%;text-align:center}
-#toast{position:fixed;left:14px;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;padding:14px 16px;border-radius:14px;background:#2b1512;border:1px solid var(--bad);color:#ffd9d1;box-shadow:0 8px 30px rgba(0,0,0,.6);transform:translateY(160%);transition:transform .25s}
-#toast.on{transform:none}
-#zoom{position:fixed;inset:0;z-index:20;background:#000}
+
+/* the chosen card's sheet, just above the tabs */
+#sheet{position:fixed;left:0;right:0;bottom:calc(var(--nav) + env(safe-area-inset-bottom));z-index:8;padding:14px 16px 14px;background:linear-gradient(180deg,#262033,#1a1624);border-top:1px solid var(--gold2);border-radius:18px 18px 0 0;box-shadow:0 -14px 30px rgba(0,0,0,.6);animation:up .2s ease both}
+#sheet .in{max-width:560px;margin:0 auto}
+.sh-t{display:flex;align-items:baseline;gap:10px;padding-right:44px}
+.sh-t b{font:800 19px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-t small{flex:none;color:var(--mute);font-size:13.5px}
+.sh-x{position:absolute;right:8px;top:6px;width:44px;height:44px;border-radius:50%;font-size:26px;line-height:1;text-align:center;color:var(--mute)}
+.ab{margin:6px 0;font-size:15px;color:#d9d4cb;max-height:92px;overflow:auto}
+.ab b{color:var(--gold)}
+.sh-b{display:flex;gap:8px;margin-top:10px}
+.sh-b .btn{margin:0;min-height:54px;font-size:16.5px;padding:8px 6px}
+.hint{margin:8px 0 0;font-size:14px;color:var(--mute)}
+.hint.gold{color:var(--gold)}
+
+/* the tabs along the bottom */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;height:calc(var(--nav) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(16,13,23,.96);border-top:1px solid #3d3320;box-shadow:0 -8px 22px rgba(0,0,0,.55)}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:600 10.5px/1 var(--serif);letter-spacing:.12em;text-transform:uppercase;color:#8c8579;position:relative}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--gold)}
+.tabs button.on::before{content:'';position:absolute;top:0;left:24%;right:24%;height:2px;border-radius:2px;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.tabs em{position:absolute;top:8px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--pc);color:#fff;font:700 11px/18px system-ui,sans-serif;font-style:normal;text-align:center;letter-spacing:0}
+
+/* Options */
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:8px 14px;margin:8px 0;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.row>span{color:var(--mute)}
+.row>b{font-weight:650}
+button.row{width:100%}
+button.row:active{filter:brightness(1.3)}
+.row .seg{margin:0;padding:3px;flex:none}
+.row .seg button{min-height:36px;padding:0 14px}
+.fine{margin:22px 0 0;font-size:13px;text-align:center;color:#746d63}
+
+#zoom{position:fixed;inset:0;z-index:30;background:#000}
 #zoom img{position:absolute;top:50%;left:50%;width:100vh;width:100dvh;max-height:100vw;object-fit:contain;transform:translate(-50%,-50%) rotate(90deg)}
 @media (orientation:landscape){#zoom img{width:100vw;height:100vh;height:100dvh;max-height:none;transform:translate(-50%,-50%)}}
-@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+#toast{position:fixed;left:14px;right:14px;bottom:calc(var(--nav) + 18px + env(safe-area-inset-bottom));z-index:20;padding:14px 16px;border-radius:14px;background:#2b1512;border:1px solid var(--bad);color:#ffd9d1;box-shadow:0 8px 30px rgba(0,0,0,.6);opacity:0;pointer-events:none;transform:translateY(16px);transition:transform .25s,opacity .25s}
+#toast.on{opacity:1;transform:none}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes up{from{transform:translateY(40%);opacity:0}to{transform:none;opacity:1}}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.grid,#sheet,.dot.off{animation:none}#toast,.cd{transition:none}}
 </style>
 </head>
 <body>
@@ -78,12 +141,17 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
 (function(){
-  var PRE='swhand-',KEY='swhand-v1',app=document.getElementById('app');
-  var V={view:'start',code:'',seat:null,tok:'',seats:null,st:null,msg:'',lost:false,openC:'',pile:'',lib:null},peer=null,conn=null,retryT=0,tries=0,toastT=0,wake=null;
+  var PRE='swhand-',KEY='swhand-v1',PKEY='swhand-prefs',app=document.getElementById('app'),PHASES=['Summon','Move','Build','Attack','Magic','Draw'];
+  var V={view:'start',code:'',seat:null,tok:'',seats:null,st:null,msg:'',lost:false,tab:'hand',side:'mine',sel:'',lib:{}},peer=null,conn=null,retryT=0,tries=0,toastT=0,wake=null;
+  // what this phone remembers about its owner: the name they typed, the card size they like, whether taps buzz
+  var PREF={name:'',big:1,vib:1};try{var pj=JSON.parse(localStorage.getItem(PKEY));if(pj&&typeof pj==='object'){PREF.name=tidy(pj.name);PREF.big=pj.big===0?0:1;PREF.vib=pj.vib===0?0:1}}catch(e){}
+  function tidy(s){return String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,16)}
+  function keepP(){try{localStorage.setItem(PKEY,JSON.stringify(PREF))}catch(e){}}
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function keep(){try{localStorage.setItem(KEY,JSON.stringify({code:V.code,seat:V.seat,tok:V.tok}))}catch(e){}}
   function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},3800)}
   function clean(c){return String(c||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,6)}
+  function buzz(){try{if(PREF.vib&&navigator.vibrate)navigator.vibrate(10)}catch(e){}}
   // the screen stays on while the hand is showing, where the phone allows it
   function awake(){try{if(navigator.wakeLock&&!wake)navigator.wakeLock.request('screen').then(function(w){wake=w;w.addEventListener('release',function(){wake=null})}).catch(function(){})}catch(e){}}
 
@@ -114,80 +182,101 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
   function onMsg(m){if(!m||typeof m!=='object')return;
     if(m.k==='seats'){V.seats=m;V.view='seats'}
     else if(m.k==='wait')V.view='wait';
-    else if(m.k==='ok'){V.seat=m.seat;V.tok=m.tok||'';keep();V.view='hand';awake();PART={};ASKED={}} // a new link: pictures that were on their way are asked for again
-    else if(m.k==='state'){V.st=m;V.view='hand';want(m.hand);if(V.pile)want(V.pile==='foe'?m.fx:m.dx)}
+    else if(m.k==='ok'){V.seat=m.seat;V.tok=m.tok||'';keep();V.view='hand';awake();PART={};ASKED={};V.lib={};if(PREF.name)send({k:'name',name:PREF.name})} // a new link: pictures on their way are asked for again, and the tablet is told this player's name
+    else if(m.k==='state'){V.st=m;V.view='hand';want(m.hand);if(V.tab==='disc')want(V.side==='foe'?m.fx:m.dx)}
     else if(m.k==='art'){if(!gotArt(m))return}
-    else if(m.k==='lib'){if(V.lib){V.lib=m;want(m.cards)}} // every card of a faction, asked for from the buttons under the hand
+    else if(m.k==='lib'){V.lib[m.foe?'foe':'mine']=m;want(m.cards)}
     else if(m.k==='no'){toast(m.why||'The tablet said no.');if(m.seat){V.seat=null;V.tok='';keep();hello()}}
     else if(m.k==='bye'){V.seat=null;V.tok='';V.st=null;keep();drop();V.lost=false;V.view='start';V.msg='The tablet let this phone go.'}
     draw()}
-  function act(a,i){var st=V.st;if(!st||!st.hand[i])return;if(V.lost)return toast('The link is down. Trying again…');send({k:'act',a:a,i:i,c:st.hand[i].c})}
+  function act(a,i){var st=V.st;if(!st||!st.hand[i])return;if(V.lost)return toast('The link is down. Trying again…');buzz();send({k:'act',a:a,i:i,c:st.hand[i].c})}
 
   // ---- the screens ----
-  function draw(){var h='';
+  var ICON={hand:'<svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="10" height="14" rx="2" transform="rotate(-10 8.5 13)"/><rect x="10.5" y="4.5" width="10" height="14" rx="2" transform="rotate(8 15.5 11.5)"/></svg>',
+    disc:'<svg viewBox="0 0 24 24"><path d="M4 8.5l8-4 8 4-8 4z"/><path d="M4 12.5l8 4 8-4"/><path d="M4 16.5l8 4 8-4"/></svg>',
+    lib:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
+    opt:'<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="16" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>'};
+  // the cards the open tab shows, and the letter that marks where they are from
+  function shown(){var st=V.st;if(!st||st.idle)return{k:'',L:[]};if(V.tab==='hand')return{k:'h',L:st.hand||[]};
+    if(V.tab==='disc')return{k:'d'+V.side,L:(V.side==='foe'?st.fx:st.dx)||[]};if(V.tab==='lib'){var b=V.lib[V.side];return{k:'l'+V.side,L:b?b.cards:null}}return{k:'',L:[]}}
+  function card(c,key){var pic=c.p&&ART[c.p],ev=c.k==='event',unit=!ev&&c.k!=='gate',pk=key.charAt(0)==='h'&&V.st.pick===c.c;
+    return'<button class="cd'+(V.sel===key?' sel':'')+(pk?' pk':'')+'" data-key="'+esc(key)+'" aria-label="'+esc(c.n)+'">'+(pic?'<img src="'+pic+'" alt="">'
+      :'<span class="tx"><span class="cost'+(ev?' ev':'')+'">'+c.cost+'</span><span class="tn"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(unit?' · '+c.atk+' '+(c.rng?'ranged':'melee')+' · '+c.life+' life':'')+'</small></span></span>')+'</button>'}
+  function sheet(c,i,inHand){var st=V.st,pic=c.p&&ART[c.p],ev=c.k==='event',unit=!ev&&c.k!=='gate',pk=inHand&&st.pick===c.c,h='<div id="sheet"><div class="in"><button class="sh-x" data-x="1" aria-label="Close">×</button><div class="sh-t"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+'</small></div>';
+    if(!pic)(c.tx||[]).forEach(function(t,k){if(t)h+='<p class="ab">'+(c.ab&&c.ab[k]?'<b>'+esc(c.ab[k])+'.</b> ':'')+esc(t)+'</p>'});
+    h+='<div class="sh-b">'+(pic?'<button class="btn" data-zoom="'+esc(c.p)+'">View larger</button>':'');
+    if(inHand){var verb=unit?'Summon':c.k==='gate'?'Build':c.st?'Place':'Play',a=unit||c.k==='gate'||c.st?'pick':'play',off=!st.mine||st.over;
+      h+='<button class="btn go" data-act="'+a+'" data-i="'+i+'"'+(off?' disabled':'')+'>'+(pk?'Cancel':verb)+'</button><button class="btn" data-act="discard" data-i="'+i+'"'+(off?' disabled':'')+'>Discard'+(st.mine&&st.phase===4?'<small>+1 magic</small>':'')+'</button>'}
+    h+='</div>';
+    if(inHand){var hint=pk?'Chosen. Tap a lit space on the tablet to place it.':!st.mine?'You can read your cards now and use them on your turn.'
+        :c.cost>st.magic?'It costs '+c.cost+' and you have '+st.magic+' magic.'
+        :unit&&st.phase!==0?'Units are summoned in the Summon phase.':c.k==='gate'&&st.phase!==2?'Gates are built in the Build phase.'
+        :ev&&!c.st&&c.ph&&c.ph!=='Any'&&c.ph!==st.phn?'This is a '+c.ph+'-phase event.':'';
+      if(hint)h+='<p class="hint'+(pk?' gold':'')+'">'+esc(hint)+'</p>'}
+    return h+'</div></div>'}
+  function top(){var st=V.st||{},n=(V.seat||0)+1,h='<header class="top"><div class="id"><span class="em">'+n+'</span><span class="who"><b>'+esc(st.name||PREF.name||'Phone '+n)+'</b><small>Phone '+n+(st.fac?' · '+esc(st.fac):'')+'</small></span><span class="dot'+(V.lost?' off':'')+'" title="'+(V.lost?'Link lost':'Linked')+'"></span></div>';
+    if(V.st&&!st.idle){var pips='';for(var i=0;i<st.max;i++)pips+='<i'+(i<st.magic?' class="on"':'')+'></i>';
+      h+='<div class="mg"><span>Magic</span><b>'+st.magic+'</b><div class="pips" aria-hidden="true">'+pips+'</div></div>'
+       +'<div class="turn'+(st.mine&&!st.over?' me':'')+'">'+(st.over?'The battle is over':st.setup?'Setting up the battle':st.mine?'Your turn · turn '+st.turn:esc(st.who)+'’s turn')+'</div>'
+       +'<div class="ps">'+PHASES.map(function(p,k){return'<i class="'+(st.setup||st.over?'':k===st.phase?(st.mine?'cur':'done'):k<st.phase?'done':'')+'">'+p+'</i>'}).join('')+'</div>'}
+    return h+(V.lost?'<div class="lost">The link dropped. Trying again…</div>':'')+'</header>'}
+  function tabs(){var st=V.st||{},T=[['hand','Hand',st.hand?st.hand.length:0],['disc','Discards',0],['lib','Cards',0],['opt','Options',0]];
+    return'<nav class="tabs">'+T.map(function(t){return'<button data-tab="'+t[0]+'"'+(V.tab===t[0]?' class="on" aria-current="page"':'')+'>'+ICON[t[0]]+t[1]+(t[2]?'<em>'+t[2]+'</em>':'')+'</button>'}).join('')+'</nav>'}
+  function options(){var st=V.st||{},set=st.set||{},n=(V.seat||0)+1,seg=function(k,a,b){return'<div class="seg"><button data-pref="'+k+':1"'+(PREF[k]?' class="on"':'')+'>'+a+'</button><button data-pref="'+k+':0"'+(PREF[k]?'':' class="on"')+'>'+b+'</button></div>'};
+    return'<h2>You</h2><input id="nm" maxlength="16" autocomplete="off" spellcheck="false" enterkeyhint="done" aria-label="Your name" placeholder="Your name" value="'+esc(st.name||PREF.name)+'"><p>Your name shows here and on the tablet.</p>'
+      +'<h2>This phone</h2><div class="row"><span>Card size</span>'+seg('big','Large','Small')+'</div><div class="row"><span>Buzz on taps</span>'+seg('vib','On','Off')+'</div>'
+      +'<h2>The tablet</h2>'+(set.sfx?'<button class="row" data-set="mus"><span>Music</span><b>'+esc(set.mus)+'</b></button><button class="row" data-set="sfx"><span>Sounds</span><b>'+esc(set.sfx)+'</b></button><button class="row" data-set="fx"><span>Effects</span><b>'+esc(set.fx)+'</b></button><p>Tap one to change it on the tablet.</p>':'<p>The tablet’s sound and effects can be set here once it has the newest game.</p>')
+      +'<h2>Link</h2><div class="row"><span>This is</span><b>Phone '+n+'</b></div><div class="row"><span>Tablet code</span><b>'+esc(V.code)+'</b></div><button class="btn" id="leave">Unlink this phone</button>'
+      +'<p class="fine">Hamster Media · your cards come straight from the tablet</p>'}
+  function body(){var st=V.st;if(V.tab==='opt')return options();
+    if(!st)return'<div class="empty">Waiting for the tablet…</div>';
+    if(st.idle)return'<div class="empty">Linked. Your hand appears here when a battle with the cards in the game begins.<br><br>You can set your name under Options while you wait.</div>';
+    var S=shown(),h='';
+    if(V.tab!=='hand')h+='<div class="seg"><button data-side="mine"'+(V.side==='mine'?' class="on"':'')+'>'+(V.tab==='lib'?esc(st.fac||'Yours'):'Yours · '+st.disc)+'</button><button data-side="foe"'+(V.side==='foe'?' class="on"':'')+'>'+(V.tab==='lib'?esc(st.foe.fac||'Theirs'):esc(st.foe.name)+' · '+(st.fx||[]).length)+'</button></div>';
+    if(!S.L)return h+'<div class="empty">Asking the tablet…</div>';
+    h+=S.L.length?'<div class="grid '+(PREF.big?'L':'S')+'">'+S.L.map(function(c,i){return card(c,S.k+':'+i+':'+c.c)}).join('')+'</div>'
+      :'<div class="empty">'+(V.tab==='hand'?'No cards in your hand.':'Nothing has been discarded yet.')+'</div>';
+    if(V.tab==='hand')h+='<p class="foot"><b>'+st.draw+'</b> left to draw · '+esc(st.foe.name)+' holds <b>'+st.foe.hand+'</b> and has <b>'+st.foe.magic+'</b> magic</p>';
+    return h}
+  function draw(force){var el=document.activeElement;if(!force&&el&&(el.id==='nm'||el.id==='nm0'||el.id==='code'))return; // a name or a code being typed is left alone
+    var h='',linked=V.view==='hand',sh='';
     if(V.view==='start'||V.view==='linking'){
-      h='<h1>Your hand</h1><p>Hold your cards on this phone. Type the code the tablet shows on its Phones sheet.</p>'
+      h='<div class="gate"><div class="mark">Summoner Wars</div><h1>Your Hand</h1><div class="rule"></div><p>Hold your cards on this phone. Type the code from the tablet’s Phones sheet, or scan its picture.</p>'
        +(V.msg?'<div class="note bad">'+esc(V.msg)+'</div>':'')
-       +'<input id="code" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from the tablet" value="'+esc(V.code)+'"'+(V.view==='linking'?' disabled':'')+'>'
+       +'<input class="code" id="code" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from the tablet" value="'+esc(V.code)+'"'+(V.view==='linking'?' disabled':'')+'>'
        +'<button class="btn go" id="go"'+(V.view==='linking'?' disabled':'')+'>'+(V.view==='linking'?'Linking…':'Link to the tablet')+'</button>'
-       +'<p>This page holds no cards. The tablet sends your hand straight to this phone.</p>'}
+       +'<p class="fine">This page holds no cards. The tablet sends your hand straight to this phone.</p></div>'}
     else if(V.view==='seats'){var s=V.seats;
-      h='<h1>Whose hand is this?</h1><p>Choose your own name. The tablet will ask to allow it.</p>'
-       +[0,1].map(function(o){return'<button class="btn" data-seat="'+o+'"'+(s.taken[o]?' disabled':'')+'>'+esc(s.names[o])+(s.taken[o]?'<small>already held</small>':'')+'</button>'}).join('')
-       +'<button class="leave" id="leave">Use a different code</button>'}
+      h='<div class="gate"><div class="mark">Linked to the tablet</div><h1>Which phone is this?</h1><div class="rule"></div><p>Player One holds Phone 1. Player Two holds Phone 2.</p>'
+       +'<input id="nm0" maxlength="16" autocomplete="off" spellcheck="false" enterkeyhint="done" aria-label="Your name" placeholder="Your name (you can change it later)" value="'+esc(PREF.name)+'">'
+       +[0,1].map(function(o){return s.solo&&o===1?'':'<button class="btn'+(s.taken[o]?'':' go')+'" data-seat="'+o+'"'+(s.taken[o]?' disabled':'')+'>Phone '+(o+1)+'<small>'+(s.taken[o]?'already linked':esc(s.names[o])+'’s hand')+'</small></button>'}).join('')
+       +'<button class="leave" id="leave">Use a different code</button></div>'}
     else if(V.view==='wait'){
-      h='<h1>Almost there</h1><div class="note ok">Tap <b>Allow</b> on the tablet to let this phone hold the hand.</div><button class="leave" id="leave">Cancel</button>'}
-    else h=hand();
-    app.innerHTML=h;
+      h='<div class="gate"><div class="mark">Phone '+((V.seat||0)+1)+'</div><h1>Almost there</h1><div class="rule"></div><div class="note ok">Tap <b>Allow</b> on the tablet to link this phone.</div><button class="leave" id="leave">Cancel</button></div>'}
+    else{var S=shown(),at=-1;if(V.sel&&S.L)S.L.forEach(function(c,i){if(S.k+':'+i+':'+c.c===V.sel)at=i});if(at<0)V.sel='';else sh=sheet(S.L[at],at,S.k==='h');
+      h=top()+body()+sh+tabs()}
+    app.className=linked?'linked'+(sh?' sheet':''):'';app.innerHTML=h;
     var st=V.st;document.documentElement.style.setProperty('--pc',st&&/^#[0-9a-fA-F]{3,8}$/.test(st.col||'')?st.col:'#8a6cff')}
+  function setName(v){var n=tidy(v);if(!n||n===PREF.name)return;PREF.name=n;keepP();send({k:'name',name:n})}
 
-  function hand(){var st=V.st,lost=V.lost?'<div class="lost">The link dropped. Trying again…</div>':'';
-    if(!st)return'<div class="top"><div class="who"><b>Linked</b></div>'+lost+'</div><p>Waiting for the tablet…</p>';
-    var head='<div class="top"><div class="who"><b>'+esc(st.name)+'</b><span>'+esc(st.fac||'')+'</span></div>';
-    if(st.idle)return head+lost+'</div><div class="note">Linked. Your hand appears here when a battle with the cards in the game begins.</div><button class="leave" id="leave">Unlink this phone</button>';
-    head+='<div class="bar"><div class="chip"><small>Magic</small><b>'+st.magic+' of '+st.max+'</b></div><div class="chip'+(st.mine?' me':'')+'"><small>'+(st.setup?'Before the battle':st.mine?'Turn '+st.turn+' · your turn':esc(st.who)+'’s turn')+'</small><b>'+(st.over?'Battle over':st.setup?'Setting up':esc(st.phn)+' phase')+'</b></div></div>'+lost+'</div>';
-    function one(c,i,ro){var key=ro+c.c+'#'+i,open=V.openC===key,pk=!ro&&st.pick===c.c,ev=c.k==='event',unit=c.k!=='event'&&c.k!=='gate',h;
-      var pic=c.p&&ART[c.p];
-      h='<div class="cd'+(open?' on':'')+(pk?' pk':'')+'">'+(pic?'<button class="hd pic" data-key="'+esc(key)+'" aria-expanded="'+open+'" aria-label="'+esc(c.n)+'"><img src="'+pic+'" alt="'+esc(c.n)+'"></button>'
-        :'<button class="hd" data-key="'+esc(key)+'" aria-expanded="'+open+'"><span class="cost'+(ev?' ev':'')+'">'+c.cost+'</span><span class="nm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+'</small></span>'
-        +(unit?'<span class="st"><b>'+c.atk+' '+(c.rng?'ranged':'melee')+'</b>'+c.life+' life</span>':'')+'</button>');
-      if(open){h+='<div class="bd">';
-        if(pic)h+='<div class="acts"><button class="btn" data-zoom="'+esc(c.p)+'">View larger</button></div>';
-        else(c.tx||[]).forEach(function(t,k){if(t)h+='<p class="ab">'+(c.ab&&c.ab[k]?'<b>'+esc(c.ab[k])+'.</b> ':'')+esc(t)+'</p>'});
-        if(!ro){var verb=unit?'Summon':c.k==='gate'?'Build':c.st?'Place':'Play',a=unit||c.k==='gate'||c.st?'pick':'play',off=!st.mine||st.over;
-        h+='<div class="acts"><button class="btn go" data-act="'+a+'" data-i="'+i+'"'+(off?' disabled':'')+'>'+(pk?'Cancel':verb)+'</button><button class="btn" data-act="discard" data-i="'+i+'"'+(off?' disabled':'')+'>Discard'+(st.mine&&st.phase===4?'<small>+1 magic</small>':'')+'</button></div>';
-        var hint=pk?'Chosen. Now tap a lit space on the tablet to place it.':!st.mine?'You can read your cards now, and use them on your turn.'
-          :c.cost>st.magic?'It costs '+c.cost+' and you have '+st.magic+' magic.'
-          :unit&&st.phase!==0?'Units are summoned in the Summon phase.':c.k==='gate'&&st.phase!==2?'Gates are built in the Build phase.'
-          :ev&&!c.st&&c.ph&&c.ph!=='Any'&&c.ph!==st.phn?'This is a '+c.ph+'-phase event.':st.phase!==4?'Discarding gives magic only in your Magic phase.':'';
-        if(hint)h+='<p class="hint'+(pk?' gold':'')+'">'+esc(hint)+'</p>'}
-        h+='</div>'}
-      return h+'</div>'}
-    if(V.lib)return head+'<button class="btn" id="unpile">‹ Back to your hand</button><p>'+(V.lib.fac?'Every '+esc(V.lib.fac)+' card.':'')+'</p><div class="hand">'
-        +((V.lib.cards||[]).map(function(c,i){return one(c,i,'lib:')}).join('')||'<div class="note">Asking the tablet…</div>')+'</div>';
-    if(V.pile){var L=(V.pile==='foe'?st.fx:st.dx)||[]; // a discard pile: both are open to both players
-      return head+'<button class="btn" id="unpile">‹ Back to your hand</button><p>'+(V.pile==='foe'?esc(st.foe.name)+'’s discard pile':'Your discard pile')+', the newest card first.</p><div class="hand">'
-        +(L.map(function(c,i){return one(c,i,V.pile+':')}).join('')||'<div class="note">Nothing has been discarded yet.</div>')+'</div>'}
-    var cards=st.hand.map(function(c,i){return one(c,i,'')}).join('');
-    return head+'<div class="hand">'+(cards||'<div class="note">No cards in your hand.</div>')+'</div>'
-      +'<div class="foot"><b>'+st.draw+'</b> in your draw pile<br>'+esc(st.foe.name)+' holds <b>'+st.foe.hand+'</b> '+(st.foe.hand===1?'card':'cards')+' and <b>'+st.foe.magic+'</b> magic</div>'
-      +'<div class="acts"><button class="btn" data-pile="mine">Your discards<small>'+st.disc+(st.disc===1?' card':' cards')+'</small></button><button class="btn" data-pile="foe">'+esc(st.foe.name)+'’s discards<small>'+((st.fx||[]).length)+((st.fx||[]).length===1?' card':' cards')+'</small></button></div>'
-      +'<div class="acts"><button class="btn" data-lib="0">Your cards<small>every '+esc(st.fac||'')+' card</small></button><button class="btn" data-lib="1">Their cards<small>every '+esc(st.foe.fac||'')+' card</small></button></div>'
-      +'<button class="leave" id="leave">Unlink this phone</button>'}
-
-  app.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;awake();
-    if(b.id==='go'){var c=clean(document.getElementById('code').value);if(c.length!==6){V.msg='The code has 6 letters or digits.';return draw()}
-      if(c!==V.code){V.seat=null;V.tok=''}V.code=c;keep();V.lost=false;tries=0;return link()}
-    if(b.id==='leave'){drop();V.pile='';V.lib=null;V.seat=null;V.tok='';V.st=null;V.lost=false;V.view='start';V.msg='';keep();return draw()}
-    if(b.dataset.seat!=null){V.seat=+b.dataset.seat;hello();return}
-    if(b.dataset.key!=null){V.openC=V.openC===b.dataset.key?'':b.dataset.key;return draw()}
-    if(b.id==='unpile'){V.pile='';V.lib=null;return draw()}
-    if(b.dataset.lib!=null){V.lib={foe:+b.dataset.lib,cards:[]};send({k:'lib',foe:+b.dataset.lib});window.scrollTo(0,0);return draw()}
-    if(b.dataset.pile){V.pile=b.dataset.pile;want(V.pile==='foe'?V.st.fx:V.st.dx);window.scrollTo(0,0);return draw()}
-    if(b.dataset.zoom){var z=document.getElementById('zoom');z.firstChild.src=ART[b.dataset.zoom]||'';z.hidden=false;return}
-    if(b.dataset.act)act(b.dataset.act,+b.dataset.i)});
+  app.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;awake();var d=b.dataset;
+    if(b.id==='go'){var c=clean(document.getElementById('code').value);if(c.length!==6){V.msg='The code has 6 letters or digits.';return draw(1)}
+      if(c!==V.code){V.seat=null;V.tok=''}V.code=c;keep();V.lost=false;tries=0;document.activeElement&&document.activeElement.blur();return link()}
+    if(b.id==='leave'){drop();V.sel='';V.tab='hand';V.seat=null;V.tok='';V.st=null;V.lost=false;V.view='start';V.msg='';keep();return draw(1)}
+    if(d.seat!=null){var f=document.getElementById('nm0');if(f){var n=tidy(f.value);if(n){PREF.name=n;keepP()}f.blur()}V.seat=+d.seat;buzz();hello();return}
+    if(d.tab){V.tab=d.tab;V.sel='';buzz();if(d.tab==='lib'&&!V.lib[V.side])send({k:'lib',foe:V.side==='foe'?1:0});if(d.tab==='disc'&&V.st)want(V.side==='foe'?V.st.fx:V.st.dx);window.scrollTo(0,0);return draw(1)}
+    if(d.side){V.side=d.side;V.sel='';buzz();if(V.tab==='lib'&&!V.lib[V.side])send({k:'lib',foe:V.side==='foe'?1:0});if(V.tab==='disc'&&V.st)want(V.side==='foe'?V.st.fx:V.st.dx);return draw(1)}
+    if(d.key!=null){V.sel=V.sel===d.key?'':d.key;buzz();return draw(1)}
+    if(d.x){V.sel='';return draw(1)}
+    if(d.zoom){var z=document.getElementById('zoom');z.firstChild.src=ART[d.zoom]||'';z.hidden=false;return}
+    if(d.pref){var kv=d.pref.split(':');PREF[kv[0]]=+kv[1];keepP();buzz();return draw(1)}
+    if(d.set){if(V.lost)return toast('The link is down. Trying again…');buzz();return send({k:'set',key:d.set})}
+    if(d.act)act(d.act,+d.i)});
+  // a name is sent when its box is left, or Enter is pressed
+  app.addEventListener('change',function(e){if(e.target.id==='nm')setName(e.target.value)});
+  app.addEventListener('focusout',function(e){if(e.target.id==='nm'){setName(e.target.value);setTimeout(draw,0)}});
+  app.addEventListener('keydown',function(e){if(e.key!=='Enter')return;if(e.target.id==='code'){var g=document.getElementById('go');if(g)g.click()}else if(e.target.id==='nm'||e.target.id==='nm0')e.target.blur()});
   document.getElementById('zoom').addEventListener('click',function(){this.hidden=true}); // a tap closes the full-screen card
-  app.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='code'){var g=document.getElementById('go');if(g)g.click()}});
   // back on the screen after the phone slept: the link is taken up again
   document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;if(V.view==='hand'){awake();if(!conn||!conn.open){tries=0;gone()}}});
   window.addEventListener('hashchange',function(){var c=clean(location.hash);if(c.length===6&&c!==V.code){V.code=c;V.seat=null;V.tok='';keep();V.lost=false;V.view='start';link()}});
@@ -196,8 +285,8 @@ input{display:block;width:100%;height:64px;margin:12px 0;padding:0 12px;border-r
   var saved={};try{saved=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
   var fromHash=clean(location.hash);
   if(fromHash.length===6){V.code=fromHash;if(saved.code===fromHash&&(saved.seat===0||saved.seat===1)){V.seat=saved.seat;V.tok=saved.tok||''}keep();link()}
-  else if(saved.code&&clean(saved.code).length===6){V.code=clean(saved.code);if((saved.seat===0||saved.seat===1)&&saved.tok){V.seat=saved.seat;V.tok=saved.tok;link()}else draw()}
-  else draw();
+  else if(saved.code&&clean(saved.code).length===6){V.code=clean(saved.code);if((saved.seat===0||saved.seat===1)&&saved.tok){V.seat=saved.seat;V.tok=saved.tok;link()}else draw(1)}
+  else draw(1);
 })();
 </script>
 </body>
